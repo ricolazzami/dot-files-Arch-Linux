@@ -65,9 +65,9 @@ apply_anyterm() {
   sed -i "s/\$alpha/$term_alpha/g" "$STATE_DIR/user/generated/terminal/sequences.txt"
 
   for file in /dev/pts/*; do
-    if [[ $file =~ ^/dev/pts/[0-9]+$ ]]; then
+    if [[ $file =~ ^/dev/pts/[0-9]+$ ]] && [[ -w "$file" ]]; then
       {
-      cat "$STATE_DIR"/user/generated/terminal/sequences.txt >"$file"
+      cat "$STATE_DIR"/user/generated/terminal/sequences.txt >"$file" 2>/dev/null
       } & disown || true
     fi
   done

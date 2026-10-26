@@ -65,9 +65,9 @@ prompt_input() {
     fi
 
     if [[ -t 0 ]]; then
-        read -rp "$prompt" response
-    elif [[ -e /dev/tty ]]; then
-        read -rp "$prompt" response < /dev/tty
+        read -rp "$prompt" response 2>/dev/null || response="$default"
+    elif [[ -e /dev/tty && -r /dev/tty ]]; then
+        read -rp "$prompt" response < /dev/tty 2>/dev/null || response="$default"
     else
         response="$default"
     fi
@@ -158,7 +158,9 @@ fi
 
 # Request sudo credentials early
 info "Checking administrative privileges..."
-sudo -v
+if ! sudo -n true 2>/dev/null; then
+    sudo -v
+fi
 while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 SUDO_PID=$!
 trap 'kill "$SUDO_PID" 2>/dev/null || true' EXIT
@@ -214,16 +216,20 @@ IS_NVIDIA=0
 IS_AMD=0
 IS_INTEL=0
 
+DETECTED_GPUS=()
 if grep -qi "nvidia" <<< "$GPU_INFO"; then
-    GPU_TYPE="NVIDIA Dedicated GPU"
+    DETECTED_GPUS+=("NVIDIA Dedicated GPU")
     IS_NVIDIA=1
-elif grep -qi -E "(amd|radeon|advanced micro)" <<< "$GPU_INFO"; then
-    GPU_TYPE="AMD Radeon"
+fi
+if grep -qi -E "(amd|radeon|advanced micro)" <<< "$GPU_INFO"; then
+    DETECTED_GPUS+=("AMD Radeon")
     IS_AMD=1
-elif grep -qi "intel" <<< "$GPU_INFO"; then
-    GPU_TYPE="Intel Graphics"
+fi
+if grep -qi "intel" <<< "$GPU_INFO"; then
+    DETECTED_GPUS+=("Intel Graphics")
     IS_INTEL=1
 fi
+GPU_TYPE="${DETECTED_GPUS[*]:-Generic / Integrated}"
 printf "  ${C_CYAN}-> Graphics Card:${C_RESET}   %s\n" "$GPU_TYPE"
 
 # Detect Virtualization
@@ -372,11 +378,13 @@ if [[ "$CONFIGURE_GPU" -eq 1 && "$INSTALL_PACKAGES" -eq 1 ]]; then
         else
             info "NVIDIA driver already present on system."
         fi
-    elif [[ "$IS_AMD" -eq 1 ]]; then
+    fi
+    if [[ "$IS_AMD" -eq 1 ]]; then
         info "AMD Radeon detected. Ensuring Mesa & Vulkan packages are installed..."
         sudo pacman -S --needed --noconfirm mesa vulkan-radeon libva-mesa-driver
         success "AMD graphics packages verified."
-    elif [[ "$IS_INTEL" -eq 1 ]]; then
+    fi
+    if [[ "$IS_INTEL" -eq 1 ]]; then
         info "Intel Graphics detected. Ensuring Mesa & Intel media drivers..."
         sudo pacman -S --needed --noconfirm mesa vulkan-intel intel-media-driver
         success "Intel graphics packages verified."
@@ -405,9 +413,13 @@ if [[ "$INSTALL_PACKAGES" -eq 1 ]]; then
     if [[ -f "$AUR_PKG_FILE" && -n "$AUR_HELPER" ]]; then
         mapfile -t AUR_PACKAGES < <(grep -vE '^\s*(#|$)' "$AUR_PKG_FILE")
         if [[ "${#AUR_PACKAGES[@]}" -gt 0 ]]; then
-            info "Synchronizing ${#AUR_PACKAGES[@]} AUR packages..."
-            "$AUR_HELPER" -S --needed --noconfirm "${AUR_PACKAGES[@]}" || warn "Some AUR packages returned non-zero. Continuing installation."
-            success "AUR package batch installation completed."
+            if ! "$AUR_HELPER" -S --needed --noconfirm "${AUR_PACKAGES[@]}"; then
+                warn "Batch AUR installation returned an error. Retrying packages individually..."
+                for pkg in "${AUR_PACKAGES[@]}"; do
+                    "$AUR_HELPER" -S --needed --noconfirm "$pkg" || warn "Package '$pkg' could not be installed."
+                done
+            fi
+            success "AUR package installation completed."
         fi
     fi
 fi
@@ -426,9 +438,9 @@ if [[ "$SETUP_SDDM" -eq 1 ]]; then
 
     # Disable any other active DM to avoid systemd conflicts
     for dm in gdm lightdm lxdm ly; do
-        if systemctl is-enabled "$dm.service" 2>/dev/null; then
+        if systemctl is-enabled "$dm.service" >/dev/null 2>&1; then
             warn "Disabling conflicting display manager: $dm.service"
-            sudo systemctl disable "$dm.service" 2>/dev/null || true
+            sudo systemctl disable "$dm.service" >/dev/null 2>&1 || true
         fi
     done
 
@@ -492,10 +504,12 @@ backup_item() {
 }
 
 if [[ "$DEPLOY_CONFIGS" -eq 1 ]]; then
+    shopt -s dotglob
     for item in "${SCRIPT_DIR}/.config"/*; do
         name="$(basename "$item")"
         backup_item "$HOME/.config/$name" "$name"
     done
+    shopt -u dotglob
 
     if [[ -f "${SCRIPT_DIR}/.config/.zshrc" && -e "$HOME/.zshrc" ]]; then
         backup_item "$HOME/.zshrc" ".zshrc"
@@ -515,7 +529,9 @@ if [[ "$DEPLOY_CONFIGS" -eq 1 ]]; then
     
     # Copy all configuration directories and files
     info "Deploying configs to ~/.config..."
+    shopt -s dotglob
     cp -rL "${SCRIPT_DIR}/.config"/* "$HOME/.config/"
+    shopt -u dotglob
 
     # Configure ~/.zshrc
     if [[ -f "$HOME/.config/.zshrc" ]]; then
@@ -613,13 +629,13 @@ if [[ "$SETUP_SHELL" -eq 1 ]]; then
     case "$SHELL_CHOICE" in
         1)
             if command -v fish >/dev/null 2>&1; then
-                sudo chsh -s "$(which fish)" "$USER" 2>/dev/null || chsh -s "$(which fish)"
+                sudo chsh -s "$(which fish)" "${USER:-$(id -un)}" 2>/dev/null || chsh -s "$(which fish)"
                 success "Default shell set to Fish."
             fi
             ;;
         2)
             if command -v zsh >/dev/null 2>&1; then
-                sudo chsh -s "$(which zsh)" "$USER" 2>/dev/null || chsh -s "$(which zsh)"
+                sudo chsh -s "$(which zsh)" "${USER:-$(id -un)}" 2>/dev/null || chsh -s "$(which zsh)"
                 success "Default shell set to Zsh."
             fi
             ;;
@@ -678,8 +694,33 @@ if [[ -f "$HOME/.config/43pr/bin/theme.py" ]] && command -v python3 >/dev/null 2
     success "Theme palette compiled."
 fi
 
+# Setup Quickshell Python virtualenv
+VENV_PATH="$HOME/.local/state/quickshell/.venv"
+if [[ ! -f "$VENV_PATH/bin/python" ]] && command -v uv >/dev/null 2>&1; then
+    info "Setting up Quickshell Python virtualenv..."
+    uv venv "$VENV_PATH" >/dev/null 2>&1 || true
+    if [[ -f "$VENV_PATH/bin/python" ]]; then
+        uv pip install --python "$VENV_PATH/bin/python" pillow materialyoucolor click requests psutil numpy opencv-python pywayland libsass >/dev/null 2>&1 || true
+        success "Quickshell Python virtualenv prepared."
+    fi
+fi
+
+# Setup qs-wallpaper-picker
+if [[ ! -d "$HOME/qs-wallpaper-picker" ]]; then
+    info "Installing qs-wallpaper-picker..."
+    git clone --depth 1 https://github.com/magetsu002/qs-wallpaper-picker.git "$HOME/qs-wallpaper-picker" >/dev/null 2>&1 || true
+fi
+if [[ -d "$HOME/qs-wallpaper-picker" ]]; then
+    chmod +x "$HOME/qs-wallpaper-picker"/scripts/*.sh 2>/dev/null || true
+    mkdir -p "$HOME/.cache/wallpaper_picker"
+    if [[ ! -f "$HOME/.cache/wallpaper_picker/last_wallpaper" ]]; then
+        echo "image|$WALLPAPER_DEST/hill-house.png" > "$HOME/.cache/wallpaper_picker/last_wallpaper"
+    fi
+    success "qs-wallpaper-picker configured."
+fi
+
 # Initialize wallpaper daemon
-if command -v awww >/dev/null 2>&1 && [[ -f "$WALLPAPER_DEST/hill-house.png" ]]; then
+if command -v awww >/dev/null 2>&1 && [[ -n "${WAYLAND_DISPLAY:-}" ]] && [[ -f "$WALLPAPER_DEST/hill-house.png" ]]; then
     info "Setting default wallpaper..."
     awww-daemon >/dev/null 2>&1 &
     sleep 0.5

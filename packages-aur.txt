@@ -7,6 +7,7 @@
 wlogout
 mpvpaper
 qt6-avif-image-plugin
+sddm-astronaut-theme
 
 # Theming, Icons & Cursors
 bibata-cursor-theme
@@ -20,31 +21,3 @@ ttf-readex-pro
 ttf-rubik-vf
 ttf-twemoji
 ttf-material-symbols-variable-git
-
-# Automatically synced from dx4white on 2026-10-11
-android-studio-canary
-beef-xss
-cloudflare-warp-bin
-debtap
-google-chrome
-illogical-impulse-audio
-illogical-impulse-backlight
-illogical-impulse-basic
-illogical-impulse-bibata-modern-classic-bin
-illogical-impulse-fonts-themes
-illogical-impulse-hyprland
-illogical-impulse-kde
-illogical-impulse-microtex-git
-illogical-impulse-portal
-illogical-impulse-python
-illogical-impulse-quickshell-git
-illogical-impulse-screencapture
-illogical-impulse-toolkit
-illogical-impulse-widgets
-kwybars-bin
-lrc_tty
-sddm-astronaut-theme
-sptlrx-bin
-visual-studio-code-bin
-waybar-lyric
-yay-bin

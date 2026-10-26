@@ -11,6 +11,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SHELL_CONFIG_FILE="$XDG_CONFIG_HOME/illogical-impulse/config.json"
 MATUGEN_DIR="$XDG_CONFIG_HOME/matugen"
 terminalscheme="$SCRIPT_DIR/terminal/scheme-base.json"
+ILLOGICAL_IMPULSE_VIRTUAL_ENV="${ILLOGICAL_IMPULSE_VIRTUAL_ENV:-$HOME/.local/state/quickshell/.venv}"
 
 handle_kde_material_you_colors() {
     # Check if Qt app theming is enabled in config
@@ -174,11 +175,17 @@ switch() {
         categorize_wallpaper "$imgpath" &
     fi
 
-    read scale screenx screeny screensizey < <(hyprctl monitors -j | jq '.[] | select(.focused) | .scale, .x, .y, .height' | xargs)
-    cursorposx=$(hyprctl cursorpos -j | jq '.x' 2>/dev/null) || cursorposx=960
-    cursorposx=$(bc <<< "scale=0; ($cursorposx - $screenx) * $scale / 1")
-    cursorposy=$(hyprctl cursorpos -j | jq '.y' 2>/dev/null) || cursorposy=540
-    cursorposy=$(bc <<< "scale=0; ($cursorposy - $screeny) * $scale / 1")
+    read scale screenx screeny screensizey < <(hyprctl monitors -j 2>/dev/null | jq '.[] | select(.focused) | .scale, .x, .y, .height' 2>/dev/null | xargs)
+    scale="${scale:-1}"
+    screenx="${screenx:-0}"
+    screeny="${screeny:-0}"
+    screensizey="${screensizey:-1080}"
+    cursorposx=$(hyprctl cursorpos -j 2>/dev/null | jq '.x' 2>/dev/null) || cursorposx=960
+    cursorposx="${cursorposx:-960}"
+    cursorposx=$(bc <<< "scale=0; ($cursorposx - $screenx) * $scale / 1" 2>/dev/null || echo 960)
+    cursorposy=$(hyprctl cursorpos -j 2>/dev/null | jq '.y' 2>/dev/null) || cursorposy=540
+    cursorposy="${cursorposy:-540}"
+    cursorposy=$(bc <<< "scale=0; ($cursorposy - $screeny) * $scale / 1" 2>/dev/null || echo 540)
     cursorposy_inverted=$((screensizey - cursorposy))
 
     matugen_args=(--source-color-index 0)
@@ -256,6 +263,18 @@ switch() {
             # Update wallpaper path in config
             set_wallpaper_path "$imgpath"
             remove_restore
+
+            # Update wallpaper via awww if active
+            if command -v awww >/dev/null 2>&1 && [[ -n "${WAYLAND_DISPLAY:-}" ]]; then
+                awww img --transition-type fade --transition-duration 0.4 "$imgpath" >/dev/null 2>&1 || true
+            fi
+            # Sync with qs-wallpaper-picker cache
+            mkdir -p "$HOME/.cache/wallpaper_picker"
+            echo "image|$imgpath" > "$HOME/.cache/wallpaper_picker/last_wallpaper"
+            # Sync with 43pr theme generator
+            if [[ -f "$HOME/.config/43pr/bin/theme.py" ]] && command -v python3 >/dev/null 2>&1; then
+                python3 "$HOME/.config/43pr/bin/theme.py" wallpaper "$imgpath" >/dev/null 2>&1 || true
+            fi
         fi
     fi
 
@@ -304,15 +323,17 @@ switch() {
     fi
 
     matugen "${matugen_args[@]}"
-    source "$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate"
+    source "$(eval echo ${ILLOGICAL_IMPULSE_VIRTUAL_ENV:-$HOME/.local/state/quickshell/.venv})/bin/activate"
     python3 "$SCRIPT_DIR/generate_colors_material.py" "${generate_colors_material_args[@]}" \
         > "$STATE_DIR"/user/generated/material_colors.scss
     deactivate
     "$SCRIPT_DIR"/applycolor.sh
 
     # Pass screen width, height, and wallpaper path to post_process
-    max_width_desired="$(hyprctl monitors -j | jq '([.[].width] | min)' | xargs)"
-    max_height_desired="$(hyprctl monitors -j | jq '([.[].height] | min)' | xargs)"
+    max_width_desired="$(hyprctl monitors -j 2>/dev/null | jq '([.[].width] | min)' 2>/dev/null | xargs)"
+    [[ -z "$max_width_desired" || "$max_width_desired" == "null" ]] && max_width_desired=1920
+    max_height_desired="$(hyprctl monitors -j 2>/dev/null | jq '([.[].height] | min)' 2>/dev/null | xargs)"
+    [[ -z "$max_height_desired" || "$max_height_desired" == "null" ]] && max_height_desired=1080
     post_process "$max_width_desired" "$max_height_desired" "$imgpath"
 }
 
@@ -337,7 +358,7 @@ main() {
 
     detect_scheme_type_from_image() {
         local img="$1"
-        source "$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate"
+        source "$(eval echo ${ILLOGICAL_IMPULSE_VIRTUAL_ENV:-$HOME/.local/state/quickshell/.venv})/bin/activate"
         "$SCRIPT_DIR"/scheme_for_image.py "$img" 2>/dev/null | tr -d '\n'
         deactivate
     }

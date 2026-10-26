@@ -36,6 +36,9 @@ if hl.plugin.hyprglass then
     hg.layer("quickshell:osk", { preset = "pomme", mask_threshold = 0.01 })
     hg.layer("quickshell:polkit", { preset = "pomme", mask_threshold = 0.01 })
     hg.layer("quickshell:reloadPopup", { preset = "pomme", mask_threshold = 0.01 })
+    hg.layer("quickshell:lyricbar", { preset = "pomme", mask_threshold = 0.01, mask_feather = 0.45 })
+    hg.layer("quickshell:overview", { preset = "pomme", mask_threshold = 0.01, mask_feather = 0.45 })
+    hg.layer("quickshell:wallpaperSelector", { preset = "pomme", mask_threshold = 0.01, mask_feather = 0.45 })
 
     -- Exclude wallpaper and non-glass overlays
     hg.layer("quickshell:background", { exclude = true })
@@ -49,3 +52,11 @@ if hl.plugin.hyprglass then
     hg.layer("wlogout", { preset = "pomme", mask_threshold = 0.01 })
     hg.layer("swaync", { preset = "pomme", mask_threshold = 0.01 })
 end
+
+-- Mouse / Input settings
+hl.config({
+    input = {
+        sensitivity = 0.3,
+        accel_profile = "flat",
+    }
+})

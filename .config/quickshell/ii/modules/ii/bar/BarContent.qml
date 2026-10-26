@@ -41,10 +41,26 @@ Item { // Bar content region
             fill: parent
             margins: Config.options.bar.cornerStyle === 1 ? (Appearance.sizes.hyprlandGapsOut) : 0 // idk why but +1 is needed
         }
-        color: Config.options.bar.showBackground ? Appearance.colors.colLayer0 : "transparent"
+        color: {
+            if (!Config.options.bar.showBackground) return "transparent";
+            return ColorUtils.applyAlpha(Appearance.colors.colLayer0Base, Appearance.m3colors.darkmode ? 0.42 : 0.50);
+        }
         radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
         border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
         border.color: Appearance.colors.colLayer0Border
+    }
+
+    Rectangle {
+        id: barHugSpecularBorder
+        visible: Config.options.bar.showBackground && Config.options.bar.cornerStyle === 0
+        anchors {
+            left: parent.left
+            right: parent.right
+            bottom: !Config.options.bar.bottom ? parent.bottom : undefined
+            top: Config.options.bar.bottom ? parent.top : undefined
+        }
+        height: 1
+        color: Appearance.colors.colLayer0Border
     }
 
     FocusedScrollMouseArea { // Left side | scroll to change brightness

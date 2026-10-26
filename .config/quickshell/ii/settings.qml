@@ -34,6 +34,11 @@ ApplicationWindow {
             component: "modules/settings/GeneralConfig.qml"
         },
         {
+            name: Translation.tr("Power"),
+            icon: "bolt",
+            component: "modules/settings/PowerConfig.qml"
+        },
+        {
             name: Translation.tr("Bar"),
             icon: "toast",
             iconRotation: 180,
@@ -80,7 +85,7 @@ ApplicationWindow {
     minimumHeight: 500
     width: 1100
     height: 750
-    color: Appearance.m3colors.m3background
+    color: Appearance.colors.colLayer0
 
     ColumnLayout {
         anchors {
@@ -230,8 +235,10 @@ ApplicationWindow {
             Rectangle { // Content container
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                color: Appearance.m3colors.m3surfaceContainerLow
+                color: Appearance.colors.colLayer1
                 radius: Appearance.rounding.windowRounding - root.contentPadding
+                border.width: 1
+                border.color: Appearance.colors.colLayer0Border
 
                 Loader {
                     id: pageLoader
