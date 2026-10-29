@@ -1,23 +1,39 @@
-# ==============================================================================
-# Arch User Repository Packages (AUR)
-# Install via yay / paru
-# ==============================================================================
-
-# Session & Desktop Components
-wlogout
+antigravity-cli
+antigravity-ide
+bibata-cursor-theme
+breeze-plus
+darkly-bin
+easyeda-pro-bin
+easyeda-pro-bin-debug
+google-chrome
+hermes-agent-bin
+html2markdown
+html2markdown-debug
+illogical-impulse-audio
+illogical-impulse-backlight
+illogical-impulse-basic
+illogical-impulse-hyprland
+illogical-impulse-kde
+illogical-impulse-microtex-git
+illogical-impulse-microtex-git-debug
+illogical-impulse-portal
+illogical-impulse-python
+illogical-impulse-screencapture
+illogical-impulse-toolkit
+illogical-impulse-widgets
 mpvpaper
+mpvpaper-debug
+omdrop-owl-bin
+otf-space-grotesk
+papirus-folders
+python-clickgen
 qt6-avif-image-plugin
 sddm-astronaut-theme
-
-# Theming, Icons & Cursors
-bibata-cursor-theme
-papirus-folders
-darkly-bin
-breeze-plus
-
-# Required Typographic & Icon Fonts
-otf-space-grotesk
+ttf-material-symbols-variable-git
 ttf-readex-pro
 ttf-rubik-vf
 ttf-twemoji
-ttf-material-symbols-variable-git
+wlogout
+wlogout-debug
+yay
+yay-debug

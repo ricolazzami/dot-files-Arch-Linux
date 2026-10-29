@@ -40,10 +40,13 @@ Item { // Bar content region
             fill: parent
             margins: Config.options.bar.cornerStyle === 1 ? (Appearance.sizes.hyprlandGapsOut) : 0 // idk why but +1 is needed
         }
-        color: Config.options.bar.showBackground ? Appearance.colors.colLayer0 : "transparent"
+        color: {
+            if (!Config.options.bar.showBackground) return "transparent";
+            return ColorUtils.applyAlpha(Appearance.colors.colLayer0Base, Appearance.m3colors.darkmode ? 0.42 : 0.50);
+        }
         radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
         border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
-        border.color: Appearance.colors.colLayer0Border
+        border.color: ColorUtils.applyAlpha(Appearance.m3colors.m3onSurface, Appearance.m3colors.darkmode ? 0.20 : 0.18)
     }
 
     FocusedScrollMouseArea { // Top section | scroll to change brightness

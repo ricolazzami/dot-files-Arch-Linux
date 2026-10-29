@@ -1,0 +1,17 @@
+{
+  "autoHideOnStop": true,
+  "anchorTop": false,
+  "horizontalAlign": "right",
+  "offsetY": 28,
+  "marginSide": 32,
+  "showProgressBar": true,
+  "showArtistBadge": true,
+  "showPlayButton": true,
+  "showPulseDot": true,
+  "enableParallax": true,
+  "fontSizeDelta": 0,
+  "bindToggle": "SUPER + Y",
+  "bindToggleMini": "SUPER + ALT + Y",
+  "bindToggleSettings": "SUPER + CTRL + Y",
+  "demoMode": true
+}

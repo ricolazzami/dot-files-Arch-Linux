@@ -8,7 +8,6 @@ alias ll='eza -lah --icons --git'
 alias la='eza -a --icons'
 alias lt='eza --tree --icons'
 
-
 # --------------------------------------------------
 # Completion
 # --------------------------------------------------
@@ -60,6 +59,8 @@ ZSH_HIGHLIGHT_STYLES[path]='fg=245'
 ZSH_HIGHLIGHT_STYLES[comment]='fg=240'
 ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=245'
 
-
 # 43PR theme controller
 theme() { python3 "$HOME/.config/43pr/bin/theme.py" "$@"; }
+
+# Added by Antigravity CLI installer
+export PATH="/home/ricou/.local/bin:$PATH"

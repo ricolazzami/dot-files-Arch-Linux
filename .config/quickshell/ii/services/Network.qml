@@ -38,11 +38,11 @@ Singleton {
         ? "lan"
         : (root.wifiEnabled && root.wifiStatus === "connected")
             ? (
-                (root.active?.strength ?? 0) > 83 ? "signal_wifi_4_bar" :
-                (root.active?.strength ?? 0) > 67 ? "network_wifi" :
-                (root.active?.strength ?? 0) > 50 ? "network_wifi_3_bar" :
-                (root.active?.strength ?? 0) > 33 ? "network_wifi_2_bar" :
-                (root.active?.strength ?? 0) > 17 ? "network_wifi_1_bar" :
+                ((root.active?.strength ?? root.networkStrength ?? 0) > 83) ? "signal_wifi_4_bar" :
+                ((root.active?.strength ?? root.networkStrength ?? 0) > 67) ? "network_wifi" :
+                ((root.active?.strength ?? root.networkStrength ?? 0) > 50) ? "network_wifi_3_bar" :
+                ((root.active?.strength ?? root.networkStrength ?? 0) > 33) ? "network_wifi_2_bar" :
+                ((root.active?.strength ?? root.networkStrength ?? 0) > 17) ? "network_wifi_1_bar" :
                 "signal_wifi_0_bar"
             )
             : (root.wifiStatus === "connecting")
@@ -189,30 +189,35 @@ Singleton {
             let hasEthernet = false;
             let hasWifi = false;
             let wifiStatus = "disconnected";
+            const wifiStates = [];
             lines.forEach(line => {
                 if (line.includes("ethernet") && line.includes("connected"))
                     hasEthernet = true;
-                else if (line.includes("wifi:")) {
-                    if (line.includes("disconnected")) {
-                        wifiStatus = "disconnected"
-                    }
-                    else if (line.includes("connected")) {
-                        hasWifi = true;
-                        wifiStatus = "connected"
-
-                        if (connectivity === "limited") {
-                            hasWifi = false;
-                            wifiStatus = "limited"
-                        }
-                    }
-                    else if (line.includes("connecting")) {
-                        wifiStatus = "connecting"
-                    }
-                    else if (line.includes("unavailable")) {
-                        wifiStatus = "disabled"
+                else if (line.startsWith("wifi:")) {
+                    if (line.includes("connected")) {
+                        wifiStates.push("connected");
+                    } else if (line.includes("connecting")) {
+                        wifiStates.push("connecting");
+                    } else if (line.includes("disconnected")) {
+                        wifiStates.push("disconnected");
+                    } else if (line.includes("unavailable")) {
+                        wifiStates.push("disabled");
                     }
                 }
             });
+
+            if (wifiStates.includes("connected")) {
+                hasWifi = true;
+                wifiStatus = (connectivity === "limited") ? "limited" : "connected";
+                if (connectivity === "limited") hasWifi = false;
+            } else if (wifiStates.includes("connecting")) {
+                wifiStatus = "connecting";
+            } else if (wifiStates.includes("disconnected")) {
+                wifiStatus = "disconnected";
+            } else if (wifiStates.includes("disabled")) {
+                wifiStatus = "disabled";
+            }
+
             root.wifiStatus = wifiStatus;
             root.ethernet = hasEthernet;
             root.wifi = hasWifi;

@@ -31,3 +31,13 @@ if status is-interactive
         alias ssh 'kitten ssh'
     end
 end
+
+
+# Added by Antigravity CLI installer
+set -gx PATH "/home/ricou/.local/bin" $PATH
+set -gx QS_WALLPAPER_DIR "$HOME/Pictures/Wallpapers"
+
+# Hermes Agent command
+fish_add_path "$HOME/.local/bin"
+
+fastfetch

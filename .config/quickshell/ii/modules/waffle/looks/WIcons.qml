@@ -76,13 +76,13 @@ Singleton {
     property string notificationsIcon: Notifications.silent ? "alert-snooze" : "alert"
 
     property string powerProfileIcon: {
-        switch (PowerProfiles.profile) {
-        case PowerProfile.PowerSaver:
+        switch (PowerProfilesDaemon.activeProfile) {
+        case "power-saver":
             return "leaf-two";
-        case PowerProfile.Balanced:
-            return "flash-on";
-        case PowerProfile.Performance:
+        case "performance":
             return "fire";
+        default:
+            return "flash-on";
         }
     }
 

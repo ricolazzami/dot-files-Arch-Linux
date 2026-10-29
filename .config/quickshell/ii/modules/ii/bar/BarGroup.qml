@@ -1,4 +1,5 @@
 import qs.modules.common
+import qs.modules.common.functions
 import QtQuick
 import QtQuick.Layouts
 
@@ -19,7 +20,9 @@ Item {
             leftMargin: root.vertical ? 4 : 0
             rightMargin: root.vertical ? 4 : 0
         }
-        color: Config.options?.bar.borderless ? "transparent" : Appearance.colors.colLayer1
+        color: Config.options?.bar.borderless ? "transparent" : ColorUtils.applyAlpha(Appearance.colors.colLayer1Base, Appearance.m3colors.darkmode ? 0.35 : 0.45)
+        border.width: Config.options?.bar.borderless ? 0 : 1
+        border.color: ColorUtils.applyAlpha(Appearance.m3colors.m3onSurface, Appearance.m3colors.darkmode ? 0.12 : 0.15)
         radius: Appearance.rounding.small
     }
 

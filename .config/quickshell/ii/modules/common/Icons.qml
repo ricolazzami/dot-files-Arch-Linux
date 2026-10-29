@@ -36,13 +36,13 @@ Singleton {
     function getNetworkMaterialSymbol() {
         if (Network.ethernet) return "lan";
         if (Network.wifiEnabled && Network.wifiStatus === "connected") {
-            const strength = Network.active?.strength ?? 0
+            const strength = Network.active?.strength ?? Network.networkStrength ?? 0;
             if (strength > 83) return "signal_wifi_4_bar";
             if (strength > 67) return "network_wifi";
             if (strength > 50) return "network_wifi_3_bar";
             if (strength > 33) return "network_wifi_2_bar";
             if (strength > 17) return "network_wifi_1_bar";
-            return "signal_wifi_0_bar"
+            return "signal_wifi_0_bar";
         } else {
             if (Network.wifiStatus === "connecting") return "signal_wifi_statusbar_not_connected";
             if (Network.wifiStatus === "disconnected") return "wifi_find";
